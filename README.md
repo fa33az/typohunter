@@ -120,4 +120,5 @@ Finished in 1.411614s, 3.5420 runs/s, 15.5850 assertions/s.
 
 ## Author
 
-Fawwaz Fadhil Rasyad (github.com/fa33az)
+[fa33az](https://github.com/fa33az)
+
