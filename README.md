@@ -8,6 +8,8 @@ Typo Hunter is a command-line interface and Rake task tool built in Ruby. It sca
 - Calculates Levenshtein distance to find spelling recommendations.
 - Optimized performance using character tally difference pre-filtering (14x speedup).
 - Supports whitelist file (.typo_hunter_whitelist) to skip project-specific words and variable names.
+- Supports interactive auto-correction mode to fix typos or add to whitelist in real-time.
+- Configurable settings via YAML file (.typo_hunter.yml) to store ignored directories and custom whitelists.
 - Can be run as a CLI tool or a Rake task.
 - Zero external dependencies (uses standard library and built-in Minitest for testing).
 
@@ -44,14 +46,16 @@ Options:
 - `-d, --dir DIR`: Directory to scan (default: current directory).
 - `-w, --whitelist FILE`: Path to a custom whitelist file.
 - `--dict DICT`: Path to a custom dictionary file.
+- `-c, --config FILE`: Path to config YAML file (defaults to `.typo_hunter.yml`).
+- `-i, --interactive`: Interactive correction mode.
 - `-h, --help`: Prints the help message.
 
-#### Example CLI Command
+#### Non-Interactive Scan Example
 ```bash
 ruby -Ilib bin/typo-hunter -d .
 ```
 
-#### Example CLI Output
+Output:
 ```text
 Hunting typos in: /path/to/typohunter
 Using dictionary: /path/to/typohunter/lib/typo_hunter/data/dictionary.txt
@@ -64,6 +68,32 @@ Found typos in 1 files:
   Line 67: "forech" -> Suggestions: ["force", "forest", "forth"]
 
 Scan complete. Found 3 typo(s) across 1 file(s).
+```
+
+#### Interactive Auto-Correction Example
+```bash
+ruby -Ilib bin/typo-hunter -d . -i
+```
+
+Output:
+```text
+Starting interactive auto-correction...
+
+----------------------------------------
+File: ./lib/my_file.rb
+Line 4: "def forech_loop"
+Found unrecognized word: "forech"
+Suggestions:
+  [1] force
+  [2] forest
+  [3] forth
+Actions:
+  [c] Enter custom correction
+  [i] Ignore and whitelist word
+  [s] Skip this typo
+  [q] Quit interactive session
+Choose action: 1
+Corrected to: "force"
 ```
 
 ### Rake Task
@@ -84,6 +114,31 @@ Found typos in 1 files:
 [FILE] ./test/typo_hunter_test.rb
   Line 43: "forech" -> Suggestions: ["force", "forest", "forth"]
 ```
+
+## Configuration File (`.typo_hunter.yml`)
+
+You can create a `.typo_hunter.yml` configuration file in your project root to customize settings:
+
+```yaml
+# Directories to ignore during recursive scan (overrides defaults)
+ignored_dirs:
+  - .git
+  - node_modules
+  - vendor
+  - tmp
+
+# Custom words to whitelist (appended to standard whitelist)
+whitelist:
+  - gemfile
+  - rakefile
+  - optparse
+  - minitest
+
+# Custom dictionary file
+# dictionary: path/to/dictionary.txt
+```
+
+A template config is provided in `.typo_hunter.yml.example`.
 
 ## Whitelisting Words
 
