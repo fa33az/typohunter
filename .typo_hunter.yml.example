@@ -1,0 +1,29 @@
+# Typo Hunter Configuration Example
+# Copy this file to .typo_hunter.yml in your project root to customize settings
+
+# Directories to ignore during the recursive scan (overrides default list)
+ignored_dirs:
+  - .git
+  - node_modules
+  - vendor
+  - tmp
+  - log
+  - bin
+  - .bundle
+  - coverage
+  - test
+
+# Custom project-specific words to ignore (appended to whitelist)
+whitelist:
+  - gemfile
+  - rakefile
+  - optparse
+  - minitest
+  - autorun
+  - tempfile
+  - argv
+  - whitelist
+  - tasklib
+
+# Path to custom dictionary file (optional, defaults to built-in dictionary)
+# dictionary: path/to/dictionary.txt

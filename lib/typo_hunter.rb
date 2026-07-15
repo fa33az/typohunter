@@ -2,6 +2,7 @@
 
 require 'set'
 require 'find'
+require 'yaml'
 
 module TypoHunter
   class Checker
@@ -10,14 +11,18 @@ module TypoHunter
     DEFAULT_DICT_PATH = File.expand_path('typo_hunter/data/dictionary.txt', __dir__)
     DEFAULT_WHITELIST_PATH = '.typo_hunter_whitelist'
 
-    def initialize(dictionary_path: nil, whitelist_path: nil, ignored_dirs: nil)
+    def initialize(dictionary_path: nil, whitelist_path: nil, ignored_dirs: nil, config_path: nil)
       @dictionary = Set.new
       @dict_with_tallies = []
       @whitelist = Set.new
+      @whitelist_path = whitelist_path || DEFAULT_WHITELIST_PATH
       @ignored_dirs = ignored_dirs || %w[.git node_modules vendor tmp log bin .bundle coverage]
 
-      load_dictionary(dictionary_path || DEFAULT_DICT_PATH)
-      load_whitelist(whitelist_path || DEFAULT_WHITELIST_PATH)
+      load_config(config_path)
+
+      dict_path = dictionary_path || @config_dict_path || DEFAULT_DICT_PATH
+      load_dictionary(dict_path)
+      load_whitelist(@whitelist_path)
     end
 
     # Extract words from text, splitting camelCase and snake_case
@@ -170,7 +175,51 @@ module TypoHunter
       scan_results
     end
 
+    # Append a word to the active whitelist and write it to the whitelist file
+    def add_to_whitelist(word)
+      cleaned = word.to_s.strip.downcase
+      return if cleaned.empty? || @whitelist.include?(cleaned)
+
+      @whitelist << cleaned
+
+      begin
+        File.open(@whitelist_path, 'a') do |f|
+          # Ensure there is a trailing newline in the existing file
+          f.puts unless File.exist?(@whitelist_path) && File.read(@whitelist_path).end_with?("\n")
+          f.puts(cleaned)
+        end
+      rescue => e
+        warn "Warning: Could not write to whitelist file #{@whitelist_path} - #{e.message}"
+      end
+    end
+
     private
+
+    def load_config(path)
+      config_file = path || '.typo_hunter.yml'
+      return unless File.file?(config_file)
+
+      begin
+        config = YAML.load_file(config_file)
+        return unless config.is_a?(Hash)
+
+        if config['ignored_dirs'].is_a?(Array)
+          @ignored_dirs = config['ignored_dirs']
+        end
+
+        if config['whitelist'].is_a?(Array)
+          config['whitelist'].each do |word|
+            @whitelist << word.to_s.strip.downcase
+          end
+        end
+
+        if config['dictionary'].is_a?(String)
+          @config_dict_path = config['dictionary']
+        end
+      rescue => e
+        warn "Warning: Failed to load config file #{config_file}: #{e.message}"
+      end
+    end
 
     def load_dictionary(path)
       return unless File.file?(path)

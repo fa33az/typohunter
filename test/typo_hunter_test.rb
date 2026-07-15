@@ -2,6 +2,7 @@
 
 require 'minitest/autorun'
 require 'tempfile'
+require 'yaml'
 require_relative '../lib/typo_hunter'
 
 class TypoHunterTest < Minitest::Test
@@ -70,5 +71,39 @@ class TypoHunterTest < Minitest::Test
     assert_includes forech_typo[:suggestions], "force"
   ensure
     temp.unlink if temp
+  end
+
+  def test_load_config
+    config_data = {
+      'ignored_dirs' => ['test_ignore'],
+      'whitelist' => ['configword'],
+      'dictionary' => 'dummy_dict.txt'
+    }
+
+    temp_config = Tempfile.new(['config', '.yml'])
+    temp_config.write(YAML.dump(config_data))
+    temp_config.close
+
+    checker = TypoHunter::Checker.new(config_path: temp_config.path)
+    assert_includes checker.ignored_dirs, 'test_ignore'
+    assert_includes checker.whitelist, 'configword'
+  ensure
+    temp_config.unlink if temp_config
+  end
+
+  def test_add_to_whitelist
+    temp_whitelist = Tempfile.new(['whitelist', '.txt'])
+    temp_whitelist.close
+
+    checker = TypoHunter::Checker.new(whitelist_path: temp_whitelist.path)
+    refute checker.whitelist.include?("addedword")
+
+    checker.add_to_whitelist("addedword")
+    assert checker.whitelist.include?("addedword")
+
+    content = File.read(temp_whitelist.path)
+    assert_match(/addedword/, content)
+  ensure
+    temp_whitelist.unlink if temp_whitelist
   end
 end
